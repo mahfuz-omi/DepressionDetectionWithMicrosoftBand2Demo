@@ -11,7 +11,18 @@ public class SocialNetworkData extends UserCredentialsData {
 
     // per day basis = time is a day, time format dd:MM:yyyy
     private String time;
-    private int secondsSpent;
+    private long secondsSpent;
+
+    // this is the package name of the social network app
+    private String socialNetworkName;
+
+    public String getSocialNetworkName() {
+        return socialNetworkName;
+    }
+
+    public void setSocialNetworkName(String socialNetworkName) {
+        this.socialNetworkName = socialNetworkName;
+    }
 
     public String getTime() {
         return time;
@@ -21,11 +32,11 @@ public class SocialNetworkData extends UserCredentialsData {
         this.time = time;
     }
 
-    public int getSecondsSpent() {
+    public long getSecondsSpent() {
         return secondsSpent;
     }
 
-    public void setSecondsSpent(int secondsSpent) {
+    public void setSecondsSpent(long secondsSpent) {
         this.secondsSpent = secondsSpent;
     }
 

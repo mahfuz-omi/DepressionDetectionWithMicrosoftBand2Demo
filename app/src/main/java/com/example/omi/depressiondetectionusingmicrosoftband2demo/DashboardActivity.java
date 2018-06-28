@@ -3,15 +3,19 @@ package com.example.omi.depressiondetectionusingmicrosoftband2demo;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.ActivityManager;
 import android.app.usage.UsageStats;
 import android.app.usage.UsageStatsManager;
 import android.content.ComponentName;
+import android.content.ContentResolver;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.provider.CallLog;
 import android.support.v4.app.ActivityCompat;
@@ -27,6 +31,9 @@ import java.lang.ref.WeakReference;
 
 import com.example.omi.depressiondetectionusingmicrosoftband2demo.model.HeartRateData;
 import com.example.omi.depressiondetectionusingmicrosoftband2demo.model.PhoneCallData;
+import com.example.omi.depressiondetectionusingmicrosoftband2demo.model.SMSData;
+import com.example.omi.depressiondetectionusingmicrosoftband2demo.model.SocialNetworkData;
+import com.example.omi.depressiondetectionusingmicrosoftband2demo.service.MonitoringService;
 import com.microsoft.band.BandClient;
 import com.microsoft.band.BandClientManager;
 import com.microsoft.band.BandException;
@@ -51,17 +58,11 @@ import java.util.List;
 
 public class DashboardActivity extends AppCompatActivity implements View.OnClickListener,LocationListener, DBCallbackListenerInterface {
     Button startMonitorButton;
-
     private BandClient client = null;
-
-    // Location Request Data
-    private long UPDATE_INTERVAL = 5*60*1000;  /* 15 mins */
-    private long UPDATE_DISTANCE = 50; /* 50 meters */
-
-    LocationManager locationManager;
     private TextView txtStatus;
     private Button callLogButton;
     private Button socialNetworkButton;
+    private Button smsButton;
 
 
     private BandHeartRateEventListener mHeartRateEventListener = new BandHeartRateEventListener() {
@@ -177,6 +178,15 @@ public class DashboardActivity extends AppCompatActivity implements View.OnClick
         this.callLogButton.setOnClickListener(this);
         this.socialNetworkButton = (Button)this.findViewById(R.id.socialNetworkButton);
         this.socialNetworkButton.setOnClickListener(this);
+        this.smsButton = this.findViewById(R.id.smsButton);
+        this.smsButton.setOnClickListener(this);
+
+        // check if service is already running
+        if(this.isServiceRunning(MonitoringService.class))
+        {
+            // service still running
+            this.startMonitorButton.setText("Stop Monitor");
+        }
 
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED
                 || ContextCompat.checkSelfPermission(this, Manifest.permission.READ_SMS) != PackageManager.PERMISSION_GRANTED
@@ -200,22 +210,34 @@ public class DashboardActivity extends AppCompatActivity implements View.OnClick
     @SuppressLint("MissingPermission")
     public void startMonitorService()
     {
+        Intent monitorServiceIntent = new Intent(this, MonitoringService.class);
+
+         //check if service is already running
+        if(this.isServiceRunning(MonitoringService.class) )
+        {
+            // service still runnung
+            // so, stop it
+            this.stopService(monitorServiceIntent);
+            this.startMonitorButton.setText("Start Monitor");
+            return;
+        }
+
+
         // enable the broadcastreceiver
-        ComponentName receiver = new ComponentName(this, PhoneSMSReceiver.class);
-        PackageManager pm = this.getPackageManager();
-        pm.setComponentEnabledSetting(receiver, PackageManager.COMPONENT_ENABLED_STATE_ENABLED, PackageManager.DONT_KILL_APP);
-
-
-        // start location tracking
-        this.locationManager = (LocationManager)this.getSystemService((Context.LOCATION_SERVICE));
-        this.locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER,UPDATE_INTERVAL,UPDATE_DISTANCE,this);
+//        ComponentName receiver = new ComponentName(this, PhoneSMSReceiver.class);
+//        PackageManager pm = this.getPackageManager();
+//        pm.setComponentEnabledSetting(receiver, PackageManager.COMPONENT_ENABLED_STATE_ENABLED, PackageManager.DONT_KILL_APP);
 
 
 
-        // start heart rate tracking
-        // ar first, take user consent
+//        // start heart rate tracking
+//        // ar first, take user consent
         final WeakReference<Activity> reference = new WeakReference<Activity>(this);
         new HeartRateConsentTask().execute(reference);
+//
+//        this.startMonitorButton.setText("Stop Monitor");
+        startService(monitorServiceIntent);
+        this.startMonitorButton.setText("Stop Monitor");
 
 
 
@@ -237,7 +259,88 @@ public class DashboardActivity extends AppCompatActivity implements View.OnClick
             {
                 this.saveSocialNetworkData();
             }
+            case R.id.smsButton:
+            {
+                this.saveSMSData();
+            }
         }
+    }
+
+    private boolean isServiceRunning(Class<?> serviceClass) {
+        ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+            if (serviceClass.getName().equals(service.service.getClassName())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+
+    private void saveSMSData()
+    {
+        // first, read inbox data
+        // Create Inbox box URI
+        Uri inboxURI = Uri.parse("content://sms/inbox");
+
+        // List required columns
+        String[] projection = new String[] { "date", "address", "body" };
+
+        // Get Content Resolver object, which will deal with Content Provider
+        ContentResolver contentResolver = getContentResolver();
+
+        // Fetch Inbox SMS Message from Built-in Content Provider
+        Cursor cursor = contentResolver.query(inboxURI, projection, null, null, null);
+
+        if(cursor != null)
+            cursor.moveToFirst();
+
+        while(cursor != null && cursor.moveToNext())
+        {
+            SMSData smsData = new SMSData();
+            smsData.setPhoneNumber(cursor.getString(cursor.getColumnIndex("address")));
+            smsData.setSmsLength(cursor.getString(cursor.getColumnIndex("body")).length());
+            smsData.setType(1);
+            smsData.setTime( DepressionDetectionApplication.getApplication().getFullDateTimeFormatter().format(new Date(Long.parseLong(cursor.getString(cursor.getColumnIndex("date"))))));
+
+            // save this data to local database
+            DBAsynctask dbAsynctask = new DBAsynctask(DashboardActivity.this);
+            dbAsynctask.setDbCallbackListenerInterface(DashboardActivity.this);
+            dbAsynctask.setResourceIdentifier(Constants.RESOURCE_IDENTIFIER.INSERT_SMSDATA);
+            dbAsynctask.execute(smsData);
+
+        }
+
+
+        // second, read sent data
+        // Create Sent box URI
+        Uri sentURI = Uri.parse("content://sms/sent");
+
+        // List required columns
+        projection = new String[] { "date", "address", "body" };
+
+        // Fetch SENT SMS Message from Built-in Content Provider
+        cursor = contentResolver.query(sentURI, projection, null, null, null);
+
+        if(cursor != null)
+            cursor.moveToFirst();
+
+        while(cursor != null && cursor.moveToNext())
+        {
+            SMSData smsData = new SMSData();
+            smsData.setPhoneNumber(cursor.getString(cursor.getColumnIndex("address")));
+            smsData.setSmsLength(cursor.getString(cursor.getColumnIndex("body")).length());
+            smsData.setType(2);
+            smsData.setTime( DepressionDetectionApplication.getApplication().getFullDateTimeFormatter().format(new Date(Long.parseLong(cursor.getString(cursor.getColumnIndex("date"))))));
+
+            // save this data to local database
+            DBAsynctask dbAsynctask = new DBAsynctask(DashboardActivity.this);
+            dbAsynctask.setDbCallbackListenerInterface(DashboardActivity.this);
+            dbAsynctask.setResourceIdentifier(Constants.RESOURCE_IDENTIFIER.INSERT_SMSDATA);
+            dbAsynctask.execute(smsData);
+
+        }
+
     }
 
     public void saveSocialNetworkData()
@@ -258,6 +361,16 @@ public class DashboardActivity extends AppCompatActivity implements View.OnClick
                     String packageName = usageStats.getPackageName();
                     if(packageName.equalsIgnoreCase("com.facebook.katana") || packageName.equalsIgnoreCase("com.facebook.orca") || packageName.equalsIgnoreCase("com.instagram.android"))
                     {
+                        SocialNetworkData socialNetworkData = new SocialNetworkData();
+                        socialNetworkData.setSecondsSpent(usageStats.getTotalTimeInForeground()/1000);
+                        socialNetworkData.setSocialNetworkName(packageName);
+
+                        // save this data to local database
+                        DBAsynctask dbAsynctask = new DBAsynctask(DashboardActivity.this);
+                        dbAsynctask.setDbCallbackListenerInterface(DashboardActivity.this);
+                        dbAsynctask.setResourceIdentifier(Constants.RESOURCE_IDENTIFIER.INSERT_SOCIALNETWORKDATA);
+                        dbAsynctask.execute(socialNetworkData);
+
                         System.out.println(usageStats.getPackageName()+"  :  "+getTimeFromMilliseconds(usageStats.getTotalTimeInForeground()));
                     }
 
@@ -381,4 +494,16 @@ public class DashboardActivity extends AppCompatActivity implements View.OnClick
         appendToUI("Band is connecting...\n");
         return ConnectionState.CONNECTED == client.connect().await();
     }
+
+    public String getTimeFromMilliseconds(long millis)
+    {
+        long second = (millis / 1000) % 60;
+        long minute = (millis / (1000 * 60)) % 60;
+        long hour = (millis / (1000 * 60 * 60)) % 24;
+
+        String time = String.format("%02d : %02d : %02d : %d", hour, minute, second, millis);
+        return time;
+    }
+
+
 }

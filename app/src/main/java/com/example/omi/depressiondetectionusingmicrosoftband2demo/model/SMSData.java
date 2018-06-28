@@ -9,7 +9,9 @@ public class SMSData extends UserCredentialsData{
     @PrimaryKey(autoGenerate = true)
     private int id;
 
-    private boolean isIncoming;
+    // 1=inbox=incoming,2=outgoing=sent
+    private int type;
+
     private String phoneNumber;
     private int smsLength;
 
@@ -24,12 +26,12 @@ public class SMSData extends UserCredentialsData{
         this.time = time;
     }
 
-    public boolean isIncoming() {
-        return isIncoming;
+    public int getType() {
+        return type;
     }
 
-    public void setIncoming(boolean incoming) {
-        isIncoming = incoming;
+    public void setType(int type) {
+        this.type = type;
     }
 
     public String getPhoneNumber() {

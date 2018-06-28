@@ -14,12 +14,12 @@ public class PhoneSMSReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
 
-        System.out.println("phone call arrived");
-
-        MyPhoneStateListener phoneListener = new MyPhoneStateListener();
-        telephony = (TelephonyManager) context
-                .getSystemService(Context.TELEPHONY_SERVICE);
-        telephony.listen(phoneListener, PhoneStateListener.LISTEN_CALL_STATE);
+//        System.out.println("phone call arrived");
+//
+//        MyPhoneStateListener phoneListener = new MyPhoneStateListener();
+//        telephony = (TelephonyManager) context
+//                .getSystemService(Context.TELEPHONY_SERVICE);
+//        telephony.listen(phoneListener, PhoneStateListener.LISTEN_CALL_STATE);
     }
 
     public class MyPhoneStateListener extends PhoneStateListener
