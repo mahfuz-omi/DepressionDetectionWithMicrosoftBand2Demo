@@ -62,7 +62,7 @@ public class DashboardActivity extends AppCompatActivity implements View.OnClick
     private TextView txtStatus;
     private Button callLogButton;
     private Button socialNetworkButton;
-    private Button smsButton;
+    private Button smsButton,showDataButton;
 
 
     private BandHeartRateEventListener mHeartRateEventListener = new BandHeartRateEventListener() {
@@ -99,6 +99,8 @@ public class DashboardActivity extends AppCompatActivity implements View.OnClick
                             @Override
                             public void userAccepted(boolean consentGiven) {
                                 new HeartRateSubscriptionTask().execute();
+//                                Intent service = new Intent(DashboardActivity.this,MonitoringService.class);
+//                                startService(service);
                             }
                         });
                     }
@@ -180,6 +182,8 @@ public class DashboardActivity extends AppCompatActivity implements View.OnClick
         this.socialNetworkButton.setOnClickListener(this);
         this.smsButton = this.findViewById(R.id.smsButton);
         this.smsButton.setOnClickListener(this);
+        this.showDataButton = this.findViewById(R.id.showDataButton);
+        this.showDataButton.setOnClickListener(this);
 
         // check if service is already running
         if(this.isServiceRunning(MonitoringService.class))
@@ -250,20 +254,64 @@ public class DashboardActivity extends AppCompatActivity implements View.OnClick
             case R.id.startMonitorButton:
             {
                 this.startMonitorService();
+                break;
             }
             case R.id.callLogButton:
             {
                 this.saveCallLogToDB();
+                break;
             }
             case R.id.socialNetworkButton:
             {
                 this.saveSocialNetworkData();
+                break;
             }
             case R.id.smsButton:
             {
                 this.saveSMSData();
+                break;
+            }
+            case R.id.showDataButton:
+            {
+                this.showAllData();
+                break;
             }
         }
+    }
+
+    public void showAllData()
+    {
+
+        // get gps data
+        DBAsynctask dbAsynctask = new DBAsynctask(this);
+        dbAsynctask.setDbCallbackListenerInterface(this);
+        dbAsynctask.setResourceIdentifier(Constants.RESOURCE_IDENTIFIER.GET_ALL_GPSDATA);
+        dbAsynctask.execute();
+
+        // get gps data
+        dbAsynctask = new DBAsynctask(this);
+        dbAsynctask.setDbCallbackListenerInterface(this);
+        dbAsynctask.setResourceIdentifier(Constants.RESOURCE_IDENTIFIER.GET_ALL_PHONE_CALL_DATA);
+        dbAsynctask.execute();
+
+        // get gps data
+        dbAsynctask = new DBAsynctask(this);
+        dbAsynctask.setDbCallbackListenerInterface(this);
+        dbAsynctask.setResourceIdentifier(Constants.RESOURCE_IDENTIFIER.GET_ALL_HEART_RATE_DATA);
+        dbAsynctask.execute();
+
+        // get gps data
+        dbAsynctask = new DBAsynctask(this);
+        dbAsynctask.setDbCallbackListenerInterface(this);
+        dbAsynctask.setResourceIdentifier(Constants.RESOURCE_IDENTIFIER.GET_ALL_SMSDATA);
+        dbAsynctask.execute();
+
+        // get gps data
+        dbAsynctask = new DBAsynctask(this);
+        dbAsynctask.setDbCallbackListenerInterface(this);
+        dbAsynctask.setResourceIdentifier(Constants.RESOURCE_IDENTIFIER.GET_ALL_SOCIAL_NETWORK_DATA);
+        dbAsynctask.execute();
+
     }
 
     private boolean isServiceRunning(Class<?> serviceClass) {
@@ -467,6 +515,31 @@ public class DashboardActivity extends AppCompatActivity implements View.OnClick
 
     @Override
     public void afterDBCall(int resourceIdentifier, Object response) {
+        if(resourceIdentifier == Constants.RESOURCE_IDENTIFIER.GET_ALL_GPSDATA)
+        {
+            List<GPSData> gpsDataList = (List<GPSData>) response;
+            System.out.println("gps date read");
+        }
+        else if(resourceIdentifier == Constants.RESOURCE_IDENTIFIER.GET_ALL_PHONE_CALL_DATA)
+        {
+            List<PhoneCallData> phoneCallDataList = (List<PhoneCallData>) response;
+            System.out.println("phone call date read");
+        }
+        else if(resourceIdentifier == Constants.RESOURCE_IDENTIFIER.GET_ALL_HEART_RATE_DATA)
+        {
+            List<HeartRateData> heartRateDataList = (List<HeartRateData>) response;
+            System.out.println("heart rate date read");
+        }
+        else if(resourceIdentifier == Constants.RESOURCE_IDENTIFIER.GET_ALL_GPSDATA)
+        {
+            List<SMSData> smsDataList = (List<SMSData>) response;
+            System.out.println("sms date read");
+        }
+        else if(resourceIdentifier == Constants.RESOURCE_IDENTIFIER.GET_ALL_SOCIAL_NETWORK_DATA)
+        {
+            List<SocialNetworkData> socialNetworkDataList = (List<SocialNetworkData>) response;
+            System.out.println("social network date read");
+        }
 
     }
 

@@ -7,13 +7,13 @@
         android:name="android.permission.PACKAGE_USAGE_STATS"
         tools:ignore="ProtectedPermissions" />
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
-    <uses-permission android:name="android.permission.RECEIVE_SMS"/>
-    <uses-permission android:name="android.permission.READ_SMS"/>
+    <uses-permission android:name="android.permission.RECEIVE_SMS" />
+    <uses-permission android:name="android.permission.READ_SMS" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.BLUETOOTH" />
     <uses-permission android:name="com.microsoft.band.service.access.BIND_BAND_SERVICE" />
-    <uses-permission android:name="android.permission.READ_CALL_LOG"/>
+    <uses-permission android:name="android.permission.READ_CALL_LOG" />
 
     <application
         android:name=".application.DepressionDetectionApplication"
@@ -30,21 +30,23 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".DashboardActivity">
+        <activity android:name=".DashboardActivity"></activity>
 
-        </activity>
-
-        <receiver android:name=".receiver.PhoneSMSReceiver"
+        <receiver
+            android:name=".receiver.PhoneSMSReceiver"
             android:enabled="false">
             <intent-filter>
                 <action android:name="android.intent.action.PHONE_STATE" />
-                <action android:name="android.provider.telephony.SMS_RECEIVED"></action>
+                <action android:name="android.provider.telephony.SMS_RECEIVED" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.NEW_OUTGOING_CALL" />
             </intent-filter>
         </receiver>
-        <service android:name=".service.MonitoringService"/>
+
+        <service android:name=".service.MonitoringService" />
+
+        <activity android:name=".ShowDataActivity"></activity>
     </application>
 
 </manifest>

@@ -84,6 +84,28 @@ public class DBAsynctask extends AsyncTask<Object, Integer, Object> {
             SocialNetworkData socialNetworkData = (SocialNetworkData) inputDatas[0];
             DepressionDetectionApplication.getApplication().getDB().socialNetworkDataDao().insert(socialNetworkData);
         }
+        else if(this.resourceIdentifier == Constants.RESOURCE_IDENTIFIER.GET_ALL_GPSDATA)
+        {
+            return DepressionDetectionApplication.getApplication().getDB().gpsDataDao().getAll();
+        }
+
+        else if(this.resourceIdentifier == Constants.RESOURCE_IDENTIFIER.GET_ALL_PHONE_CALL_DATA)
+        {
+            return DepressionDetectionApplication.getApplication().getDB().phoneCallDataDao().getAll();
+        }
+
+        else if(this.resourceIdentifier == Constants.RESOURCE_IDENTIFIER.GET_ALL_HEART_RATE_DATA)
+        {
+            return DepressionDetectionApplication.getApplication().getDB().heartRateDataDao().getAll();
+        }
+        else if(this.resourceIdentifier == Constants.RESOURCE_IDENTIFIER.GET_ALL_SMSDATA)
+        {
+            return DepressionDetectionApplication.getApplication().getDB().smsDataDao().getAll();
+        }
+        else if(this.resourceIdentifier == Constants.RESOURCE_IDENTIFIER.GET_ALL_SOCIAL_NETWORK_DATA)
+        {
+            return DepressionDetectionApplication.getApplication().getDB().socialNetworkDataDao().getAll();
+        }
         return null;
 
     }
